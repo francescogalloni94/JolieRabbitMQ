@@ -85,7 +85,20 @@ main{
 
        fileRequest.content=fileOL;
    	 fileRequest.filename="ServerQueueConfigure.ol";
-   	 writeFile@File(fileRequest)()
+   	 writeFile@File(fileRequest)();
+       readFile.filename=iniResponse.fileParameter.file_name;
+       readFile@File(readFile)(file);
+       splitRequest=file;
+       splitRequest.regex="main\\s*\\{";
+       split@StringUtils(splitRequest)(splitResponse);
+       newFile.content=splitResponse.result[0]
+                       +"/* Begin @ DynamicQueueArchitecture */\n"
+                       +"include \"./RabbitMQTool/ServerQueueConfigure.ol\"\n"
+                       +"/* End @ DynamicQueueArchitecture */\n\n"
+                       +"main{\n\n"
+                       +splitResponse.result[1];
+      newFile.filename=iniResponse.fileParameter.file_name;
+      writeFile@File(newFile)()
 
 
 

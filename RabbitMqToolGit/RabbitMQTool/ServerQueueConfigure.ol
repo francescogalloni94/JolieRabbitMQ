@@ -14,7 +14,7 @@ OneWay: configure(configureRequest)
 
 inputPort ServerLocal {
 Location:"local"
-Interfaces: ServerInterface
+Interfaces: ServerInterface,SecondaInterfaccia
 }
 
 outputPort RabbitMq {

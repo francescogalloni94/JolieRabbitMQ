@@ -26,6 +26,10 @@ OneWay: prova
 OneWay: operation
 }
 
+interface SecondaInterfaccia{
+RequestResponse: requestDue
+}
+
 interface embeddedQueue{
 OneWay: writeOnExchange(queueRequest)
 OneWay:configure(undefined)
@@ -37,7 +41,7 @@ OneWay:_receiveResponse(RecRespType)
 
 inputPort Server{
 Location:"local"
-Interfaces: ServerRequest,CallbackInterface
+Interfaces: ServerRequest,SecondaInterfaccia,CallbackInterface
 }
 
 outputPort Queue{
@@ -70,6 +74,9 @@ outputPortData.interfaces[j]<<var.interfaces[k]
 };
 request.portData<<outputPortData;
 request.hostname=iniResponse.automatizationParameter.rabbitmq_host_name;
+request.responseApiType=iniResponse.automatizationParameter.get_response_api_type;
+request.maxThread=iniResponse.automatizationParameter.max_thread;
+request.millisPullRange=iniResponse.automatizationParameter.millis_pull_range;
 configure@Queue(request)
 }
 main
@@ -109,5 +116,16 @@ operationRequest.routingKey="socket://localhost:9000#operation";
 operationRequest.token="";
 writeOnExchange@Queue(operationRequest)
 }
+
+[requestDue(requestDueClientRequest)(requestDueServerResponse){
+requestDueRequest.message<<requestDueClientRequest;
+requestDueRequest.exchangeName="socket://localhost:9000";
+requestDueRequest.routingKey="socket://localhost:9000#requestDue";
+csets.token=new;
+requestDueRequest.token=csets.token;
+writeOnExchange@Queue(requestDueRequest);
+_receiveResponse(requestDueRes);
+requestDueServerResponse<<requestDueRes.message
+}]
 
 }

@@ -116,6 +116,9 @@ outputPortData=request.name.name;
             +"};\n"
             +"request.portData<<outputPortData;\n"
             +"request.hostname=iniResponse.automatizationParameter.rabbitmq_host_name;\n"
+            +"request.responseApiType=iniResponse.automatizationParameter.get_response_api_type;\n"
+            +"request.maxThread=iniResponse.automatizationParameter.max_thread;\n"
+            +"request.millisPullRange=iniResponse.automatizationParameter.millis_pull_range;\n"
             +"configure@Queue(request)\n"
             +"}\n";
 
@@ -155,8 +158,20 @@ outputPortData=request.name.name;
 
    fileRequest.content=fileOL;
    fileRequest.filename="ClientQueueConfigure.ol";
-   writeFile@File(fileRequest)()
-
+   writeFile@File(fileRequest)();
+   readFile.filename=iniResponse.fileParameter.file_name;
+   readFile@File(readFile)(file);
+   splitRequest=file;
+   splitRequest.regex="main\\s*\\{";
+   split@StringUtils(splitRequest)(splitResponse);
+   newFile.content=splitResponse.result[0]
+   +"/* Begin @ DynamicQueueArchitecture */\n"
+   +"embedded {\n Jolie: \"./RabbitMQTool/ClientQueueConfigure.ol\" in Server\n}\n"
+   +"/* End @ DynamicQueueArchitecture */\n\n"
+   +"main{\n\n"
+   +splitResponse.result[1];
+   newFile.filename=iniResponse.fileParameter.file_name;
+   writeFile@File(newFile)()
 
 
 

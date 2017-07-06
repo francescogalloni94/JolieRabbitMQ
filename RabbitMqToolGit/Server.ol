@@ -1,6 +1,6 @@
 include "console.iol"
-include "metaJolie.iol"
 include "string_utils.iol"
+include "metaJolie.iol"
 include "time.iol"
 include "file.iol"
 
@@ -14,6 +14,9 @@ interface ServerInterface{
 	OneWay: operation(undefined)
   RequestResponse: request(undefined)(undefined)
 
+}
+interface SecondaInterfaccia {
+  RequestResponse: requestDue(undefined)(undefined)
 }
 
 /*interface SecondaInterfaccia {
@@ -33,17 +36,21 @@ interface TerzaInterfaccia {
 inputPort Server {
 	Location:"socket://localhost:9000" 
 	Protocol: sodep
-	Interfaces: ServerInterface
+	Interfaces: ServerInterface,SecondaInterfaccia
 }
 
-include "./RabbitMQTool/ServerQueueConfigure.ol"
 init{
    getCurrentTimeMillis@Time()(res);
    fileRequest.filename=string (res)+".csv"
 }
 
-main
-{
+
+
+
+
+main{
+
+
    [test(msg)]{
        //print@Console("test    "+msg.text+"..."+msg.number+"..."+msg.id+"\n")()
 
@@ -75,6 +82,10 @@ main
    [request(recv)(resp){
      println@Console("TEMPO "+recv.deliveryTime)();
      resp.saluto="ciao"
+   }]
+   [requestDue(recv2)(resp2){
+     println@Console("TEMPO "+recv2.deliveryTime)();
+     resp2.saluto="Frase request response"
    }]
 
    

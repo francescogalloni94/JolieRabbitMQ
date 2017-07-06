@@ -1,6 +1,6 @@
 include "console.iol"
-include "metaJolie.iol"
 include "string_utils.iol"
+include "metaJolie.iol"
 include "time.iol"
 
 type testRequest: void{
@@ -14,38 +14,36 @@ interface ServerRequest {
   OneWay: operation(undefined)
   OneWay: prova(undefined)
   RequestResponse: request(undefined)(undefined)
+
 }
 
-/*interface SecondaInterfaccia {
-  OneWay: testSeconda(undefined)
-  OneWay: operationSeconda(undefined)
-  OneWay: provaSeconda(undefined)
-  RequestResponse: requestDue(undefined)(int)
+interface SecondaInterfaccia {
+  RequestResponse: requestDue(undefined)(undefined)
 }
 
-interface TerzaInterfaccia {
+/*interface TerzaInterfaccia {
   OneWay: testTerza(undefined)
   OneWay: operationTerza(undefined)
   OneWay: provaTerza(undefined)
   RequestResponse: requestTre(undefined)(int)
 }*/
 
+//include "dependencies.iol"
+
 
 outputPort Server {
 	Location: "socket://localhost:9000"
 	Protocol: sodep
-	Interfaces: ServerRequest
-}
-
-
-embedded {
-  Jolie: "./RabbitMQTool/ClientQueueConfigure.ol" in Server
+	Interfaces: ServerRequest,SecondaInterfaccia
 }
 
 
 
-main
-{
+
+
+
+main{
+
      sleep@Time(5000)();
      requestNumber=args[0];
       //requestNumber=20;
@@ -54,12 +52,17 @@ main
     for(i=0,i<requestNumber,i++){
     getCurrentTimeMillis@Time()(time);
     testRequest.deliveryTime=time;
-    println@Console(i)();
-    request@Server(testRequest)(res)
-    
-    //test@Server(testRequest)
+    //println@Console(i)();
+    test@Server(testRequest)
     };
+    getCurrentTimeMillis@Time()(time);
+    testRequest.deliveryTime=time;
+    request@Server(testRequest)(res);
     print@Console("PROVAA"+res.saluto)();
+    getCurrentTimeMillis@Time()(time);
+    testRequest.deliveryTime=time;
+    requestDue@Server(testRequest)(res2);
+    print@Console("SECONDA"+res2.saluto)();
     sleep@Time(80000)()
     /*testRequest.text="Hello world";
     testRequest.number=23;

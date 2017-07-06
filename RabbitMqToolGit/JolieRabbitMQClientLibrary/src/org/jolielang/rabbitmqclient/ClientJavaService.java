@@ -8,12 +8,14 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.GetResponse;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -87,9 +89,10 @@ public class ClientJavaService extends JavaService {
                 }
                 
             }
-            
-           
-            QueueListeningThread queueThread=new QueueListeningThread("push",10,1000,responseQueues);
+            String apiType=request.getFirstChild("responseApiType").strValue();
+            int maxThread=request.getFirstChild("maxThread").intValue();
+            long millisPullRange=request.getFirstChild("millisPullRange").longValue();
+            QueueListeningThread queueThread=new QueueListeningThread(apiType,maxThread,millisPullRange,responseQueues);
             queueThread.start();
             
             
@@ -161,7 +164,7 @@ public class ClientJavaService extends JavaService {
       public void run(){
           if(this.apiType.equalsIgnoreCase("pull")){
               startPull(this.maxThread,this.pullRangeMillis);
-          }else{
+          }else if(this.apiType.equalsIgnoreCase("push")){
               startPush();
           }
           
@@ -211,8 +214,68 @@ public class ClientJavaService extends JavaService {
     }
       
      private void startPull(int maxThread,long pullRangeMillis){
-         
-     } 
+        
+         while(true){
+            
+            if(ManagementFactory.getThreadMXBean().getThreadCount()<maxThread){
+                getMessage(maxThread);
+            }
+            try {
+                Thread.sleep(pullRangeMillis);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ClientJavaService.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+     
+     private void getMessage(int maxThread){
+        
+        boolean message=true;
+        while(message){
+            int count=0;
+            for(int i=0;i<queues.size();i++){
+             if(ManagementFactory.getThreadMXBean().getThreadCount()<maxThread)
+             {
+                try {
+            
+                    boolean autoAck=false;
+                    GetResponse response=null;
+                    response=channel.basicGet(queues.get(i), autoAck);
+                    if(response==null){
+                        count++;
+                    }
+                    else{
+                           
+                           byte[] body = response.getBody();
+                           long deliveryTag = response.getEnvelope().getDeliveryTag();
+                           QueueMessage callback=null;
+                           byte [] data = Base64.getDecoder().decode(new String(body));
+                           ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
+                           callback = (QueueMessage) ois.readObject();
+                           ois.close();
+                           String[] split=queues.get(i).split(splitToken);
+                           Value messageFromQueue=Value.create();
+                           messageFromQueue.getFirstChild("message").deepCopy(callback.getMessage());
+                           messageFromQueue.getNewChild("token").setValue(callback.getSessionToken());
+                           CommMessage request=CommMessage.createRequest("_receiveResponse","/",messageFromQueue);
+                           sendMessage(request); 
+                           
+                           channel.basicAck(deliveryTag, false);
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(ClientJavaService.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(ClientJavaService.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            }
+            if(count==queues.size()){
+                message=false;
+            }
+        }
+    
+    }
+     
       
   }
   

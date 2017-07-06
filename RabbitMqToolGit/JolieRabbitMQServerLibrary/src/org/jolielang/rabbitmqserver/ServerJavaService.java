@@ -90,39 +90,54 @@ public class ServerJavaService extends JavaService {
     
     
     private void startPush(){
-           consumers=new ArrayList<DefaultConsumer>();
+         consumers=new ArrayList<DefaultConsumer>();
+            try {
             for(int i=0;i<queueNames.size();i++){
-                try {
+               
                     final String queueName=queueNames.get(i);
                     DefaultConsumer consumer=new DefaultConsumer(channel){
                         @Override
                         public void handleDelivery (String consumerTag, Envelope envelope,
                                 AMQP.BasicProperties properties, byte[] body) throws UnsupportedEncodingException
                         {
-                            String id="";
-                            Value response=null;
-                            byte [] data = Base64.getDecoder().decode(new String(body));
-                            try{
-                                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-                                response= (Value) ois.readObject();
-                                if(response.getFirstChild("queueID")!=null){
-                                id=response.getFirstChild("queueID").strValue();
-                                
+                            ObjectInputStream ois=null;
+                            try {
+                                String id="";
+                                QueueMessage response=null;
+                                byte [] data = Base64.getDecoder().decode(new String(body));
+                                ois = new ObjectInputStream(new ByteArrayInputStream(data));
+                                response= (QueueMessage) ois.readObject();
+                                if(!response.getId().equals("")){
+                                    id=response.getId();
+                                    
                                 }
-                                response=response.getFirstChild("message");
                                 ois.close();
-                            }catch(IOException e){
-                                
+                                Value messageFromQueue=Value.create();
+                                messageFromQueue=response.getMessage();
+                                String[] split=queueName.split(splitToken);
+                                CommMessage request=CommMessage.createRequest(split[1],"/",messageFromQueue);
+                                if(!id.equals("")){
+                                    QueueMessage operationMessageResponse=new QueueMessage();
+                                    operationMessageResponse.setId(id);
+                                    operationMessageResponse.setSessionToken(response.getSessionToken());
+                                    ResponseWaitingThread responseThread=new ResponseWaitingThread(request,operationMessageResponse);
+                                    responseThread.configure(split[1],split[0], splitToken, channel);
+                                    responseThread.start();
+                                }else{
+                                    
+                                    sendMessage(request);
+                                }
+                            } catch (IOException ex) {
+                                Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
                             } catch (ClassNotFoundException ex) {
                                 Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
+                            } finally {
+                                try {
+                                    ois.close();
+                                } catch (IOException ex) {
+                                    Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
+                                }
                             }
-                            
-                            String[] split=queueName.split(splitToken);
-                            if(!id.equals("")){
-                                //uniqueIds.put(split[3], id);
-                            }
-                            CommMessage request=CommMessage.createRequest(split[1],"/", response);
-                            sendMessage(request);
                             
                             
                             
@@ -130,11 +145,11 @@ public class ServerJavaService extends JavaService {
                     };
                     consumers.add(consumer);
                     channel.basicConsume(queueName, true, consumer);
-                } catch (IOException ex) {
-                    Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                
             }
-       
+       } catch (IOException ex) {
+                    Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
     }
     
@@ -193,12 +208,12 @@ public class ServerJavaService extends JavaService {
                            String[] split=queueNames.get(i).split(splitToken);
                            CommMessage request=CommMessage.createRequest(split[1],"/",messageFromQueue);
                           if(!id.equals("")){
-                              CommMessage operationResponse= sendMessage(request).recvResponseFor(request);
                               QueueMessage operationMessageResponse=new QueueMessage();
-                              operationMessageResponse.setMessage(operationResponse.value());
                               operationMessageResponse.setId(id);
                               operationMessageResponse.setSessionToken(callback.getSessionToken());
-                              writeResponseOnExchange(operationMessageResponse,split[1],split[0]);
+                              ResponseWaitingThread responseThread=new ResponseWaitingThread(request,operationMessageResponse);
+                              responseThread.configure(split[1],split[0], splitToken, channel);
+                              responseThread.start();
                               
                            }else{
                              sendMessage(request); 
@@ -219,7 +234,42 @@ public class ServerJavaService extends JavaService {
     
     }
     
-    private void writeResponseOnExchange(QueueMessage response,String operation,String exchangeName){
+    
+    
+    
+    private class ResponseWaitingThread extends Thread{
+        private CommMessage request;
+        private QueueMessage operationMessageResponse;
+        private String operation;
+        private String exchangeName;
+        private String splitToken;
+        private Channel channel;
+        
+        public ResponseWaitingThread(CommMessage request,QueueMessage operationMessageResponse){
+            this.request=request;
+            this.operationMessageResponse=operationMessageResponse;
+        }
+        
+        @Override
+        public void run(){
+            try {
+                CommMessage operationResponse= sendMessage(request).recvResponseFor(request);
+                operationMessageResponse.setMessage(operationResponse.value());
+                writeResponseOnExchange(operationMessageResponse,operation,exchangeName);
+            } catch (IOException ex) {
+                Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        public void configure(String operation,String exchangeName,String splitToken,Channel channel){
+            this.operation=operation;
+            this.exchangeName=exchangeName;
+            this.splitToken=splitToken;
+            this.channel=channel;
+            
+        }
+        
+        private void writeResponseOnExchange(QueueMessage response,String operation,String exchangeName){
         try {
             
             channel.exchangeDeclare(exchangeName,"direct");
@@ -239,6 +289,12 @@ public class ServerJavaService extends JavaService {
         } catch (InterruptedException ex) {
             Logger.getLogger(ServerJavaService.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+    }
+        
+        
+        
+        
         
     }
     
