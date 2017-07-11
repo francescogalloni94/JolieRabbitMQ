@@ -20,12 +20,10 @@ main{
       	}
       };
        
-       
-      //valueToPrettyString@StringUtils(inputPortData)(val);
-      //print@Console(val)();
 
 
-      fileOL="include \"ini_utils.iol\"\n\n"
+      fileOL="include \"ini_utils.iol\"\n"
+                  +"include \"metaJolie.iol\"\n\n"
                   +"type configureRequest: void{\n"
       		+".apiType : string\n"
       		+".maxThread : int\n"

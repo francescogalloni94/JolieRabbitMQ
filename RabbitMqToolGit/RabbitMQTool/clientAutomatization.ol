@@ -12,8 +12,6 @@ parseIniFile@IniUtils(iniRequest)(iniResponse);
 request.name.name=iniResponse.fileParameter.port_name;
 request.filename=iniResponse.fileParameter.file_name;
 getMetaData@MetaJolie(request)(var);
-//valueToPrettyString@StringUtils(var)(val);
-//print@Console(val)();
 outputPortData=request.name.name;
 
   for(i=0,i<#var.output,i++){
@@ -166,7 +164,7 @@ outputPortData=request.name.name;
    split@StringUtils(splitRequest)(splitResponse);
    newFile.content=splitResponse.result[0]
    +"/* Begin @ DynamicQueueArchitecture */\n"
-   +"embedded {\n Jolie: \"./RabbitMQTool/ClientQueueConfigure.ol\" in Server\n}\n"
+   +"embedded {\n Jolie: \"./RabbitMQTool/ClientQueueConfigure.ol\" in "+outputPortData+"\n}\n"
    +"/* End @ DynamicQueueArchitecture */\n\n"
    +"main{\n\n"
    +splitResponse.result[1];
