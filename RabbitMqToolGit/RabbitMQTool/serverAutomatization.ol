@@ -23,7 +23,8 @@ main{
 
 
       fileOL="include \"ini_utils.iol\"\n"
-                  +"include \"metaJolie.iol\"\n\n"
+                  +"include \"metajolie.iol\"\n"
+                  +"include \"dependencies.iol\"\n\n"
                   +"type configureRequest: void{\n"
       		+".apiType : string\n"
       		+".maxThread : int\n"
@@ -53,21 +54,22 @@ main{
        			+"}\n\n";
 
        fileOL+="init{\n"
-       			+"portRequest.name.name=\""+inputPortData+"\";\n"
-       			+"portRequest.filename=\""+portRequest.filename+"\";\n"
+                        +"iniRequest=\"./RabbitMQTool/RabbitMqServer.ini\";\n"
+                        +"parseIniFile@IniUtils(iniRequest)(iniResponse);\n"
+       			+"portRequest.name.name=iniResponse.fileParameter.port_name;\n"
+       			+"portRequest.filename=iniResponse.fileParameter.file_name;\n"
        			+"getInputPortMetaData@MetaJolie(portRequest)(res);\n"
        			+"for(i=0,i<#res.input,i++){\n"
        			+"if(res.input[i].name.name==portRequest.name.name){\n"
        			+"var<<res.input[i]\n"
        			+"}\n"
        			+"};\n"
-                        +"iniRequest=\"./RabbitMQTool/RabbitMqServer.ini\";\n"
-                        +"parseIniFile@IniUtils(iniRequest)(iniResponse);\n"
+                        
        			+"config.portMetaData<<var;\n"
        			+"config.apiType=iniResponse.automatizationParameter.api_type;\n"
        			+"config.maxThread=int(iniResponse.automatizationParameter.max_thread);\n"
        			+"config.millisPullRange=long(iniResponse.automatizationParameter.millis_pull_range);\n"
-       			+"config.hostName=iniResponse.automatizationParameter.rabbitmq_host_name;\n"
+       			+"config.hostName=JDEP_RABBITMQ_LOCATION;\n"
        			+"configure@RabbitMq(config)\n"
        			+"}\n\n";
 

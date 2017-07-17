@@ -33,7 +33,8 @@ outputPortData=request.name.name;
   
 
   fileOL="include \"ini_utils.iol\"\n"
-      +"include \"metaJolie.iol\"\n\n"
+      +"include \"metajolie.iol\"\n"
+      +"include \"dependencies.iol\"\n\n"
       +"execution{concurrent}\n\n"
   		+"type queueRequest: void {\n"
   		+" .message: undefined\n"
@@ -113,7 +114,7 @@ outputPortData=request.name.name;
             +"}\n"
             +"};\n"
             +"request.portData<<outputPortData;\n"
-            +"request.hostname=iniResponse.automatizationParameter.rabbitmq_host_name;\n"
+            +"request.hostname=JDEP_RABBITMQ_LOCATION;\n"
             +"request.responseApiType=iniResponse.automatizationParameter.get_response_api_type;\n"
             +"request.maxThread=iniResponse.automatizationParameter.max_thread;\n"
             +"request.millisPullRange=iniResponse.automatizationParameter.millis_pull_range;\n"

@@ -1,5 +1,6 @@
 include "ini_utils.iol"
-include "metaJolie.iol"
+include "metajolie.iol"
+include "dependencies.iol"
 
 execution{concurrent}
 
@@ -73,7 +74,7 @@ outputPortData.interfaces[j]<<var.interfaces[k]
 }
 };
 request.portData<<outputPortData;
-request.hostname=iniResponse.automatizationParameter.rabbitmq_host_name;
+request.hostname=JDEP_RABBITMQ_LOCATION;
 request.responseApiType=iniResponse.automatizationParameter.get_response_api_type;
 request.maxThread=iniResponse.automatizationParameter.max_thread;
 request.millisPullRange=iniResponse.automatizationParameter.millis_pull_range;
