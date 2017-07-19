@@ -1,6 +1,5 @@
 include "console.iol"
 include "string_utils.iol"
-include "metaJolie.iol"
 include "time.iol"
 include "file.iol"
 
@@ -47,8 +46,16 @@ init{
 
 
 
+/* Begin @ DynamicQueueArchitecture */
+include "./RabbitMQTool/ServerQueueConfigure.ol"
+/* End @ DynamicQueueArchitecture */
+
+
 
 main{
+
+
+
 
 
    [test(msg)]{

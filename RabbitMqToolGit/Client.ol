@@ -1,6 +1,5 @@
 include "console.iol"
 include "string_utils.iol"
-include "metaJolie.iol"
 include "time.iol"
 
 type testRequest: void{
@@ -28,7 +27,7 @@ interface SecondaInterfaccia {
   RequestResponse: requestTre(undefined)(int)
 }*/
 
-//include "dependencies.iol"
+
 
 
 outputPort Server {
@@ -40,9 +39,20 @@ outputPort Server {
 
 
 
+/* Begin @ DynamicQueueArchitecture */
+embedded {
+ Jolie: "./RabbitMQTool/ClientQueueConfigure.ol" in Server
+}
+/* End @ DynamicQueueArchitecture */
+
+
 
 
 main{
+
+
+
+
 
      sleep@Time(5000)();
      requestNumber=args[0];
