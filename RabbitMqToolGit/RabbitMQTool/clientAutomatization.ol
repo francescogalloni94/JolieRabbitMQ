@@ -1,5 +1,5 @@
 include "console.iol"
-include "metaJolie.iol"
+include "metajolie.iol"
 include "string_utils.iol"
 include "file.iol"
 include "ini_utils.iol"
