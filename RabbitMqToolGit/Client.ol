@@ -39,11 +39,6 @@ outputPort Server {
 
 
 
-/* Begin @ DynamicQueueArchitecture */
-embedded {
- Jolie: "./RabbitMQTool/ClientQueueConfigure.ol" in Server
-}
-/* End @ DynamicQueueArchitecture */
 
 
 

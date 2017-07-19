@@ -46,9 +46,7 @@ init{
 
 
 
-/* Begin @ DynamicQueueArchitecture */
-include "./RabbitMQTool/ServerQueueConfigure.ol"
-/* End @ DynamicQueueArchitecture */
+
 
 
 
